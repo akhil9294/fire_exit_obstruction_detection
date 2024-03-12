@@ -1,9 +1,8 @@
 import os
-from flask import Flask,request, jsonify
+from flask import Flask,request, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
 from utils import f_resize_raw_image, f_predict, f_clear_folder
 from flask_cors import CORS
-#import jsonify
 from tensorflow.keras.preprocessing.image import ImageDataGenerator 
 import scipy
 
@@ -25,6 +24,12 @@ TMP_FOLDER0 = os.path.join(TMP_FOLDER, '0')
 if not os.path.exists(TMP_FOLDER0):
     os.makedirs(TMP_FOLDER0)
 
+OUTPUT_FOLDER = "results"
+if not os.path.exists(OUTPUT_FOLDER):
+    os.makedirs(OUTPUT_FOLDER)
+
+
+app.config["OUTPUT_FOLDER"] = OUTPUT_FOLDER
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["TMP_FOLDER"] = TMP_FOLDER
 
@@ -32,6 +37,13 @@ BASE_URL = os.environ.get("BASE_URL", "http://localhost:5003")
 PORT = os.environ.get("PORT", 5003)
 
 target_size = (224,224)
+
+
+@app.route("/api/image/<filename>")
+def uploaded_file(filename):
+    return send_from_directory(app.config["OUTPUT_FOLDER"], filename)
+
+
 
 @app.route("/obstruction_detection/process-image", methods = ['POST'])
 def upload_file():
@@ -46,6 +58,7 @@ def upload_file():
     if image_file:
         image_file_path = os.path.join(UPLOAD_FOLDER, filename)
         image_file.save(image_file_path)
+        
         
     
     if not (image_file_path.endswith(".jpg") or image_file_path.endswith(".jpeg") or image_file_path.endswith(".png")):
@@ -62,6 +75,8 @@ def upload_file():
     # Picking the image from ./uploads directory, resizing the image to target_size and pushing the resized images to tmp directory.
     
     f_resize_raw_image(UPLOAD_FOLDER, TMP_FOLDER0, target_size)
+    f_resize_raw_image(TMP_FOLDER0, OUTPUT_FOLDER, target_size)
+    os.rename(os.path.join(OUTPUT_FOLDER,'0.jpg'), os.path.join(OUTPUT_FOLDER, filename))
 
     # Creating data generator
     image_datagen = ImageDataGenerator( rescale = 1.0/255. )
@@ -70,12 +85,15 @@ def upload_file():
     f_clear_folder(TMP_FOLDER0)
     f_clear_folder(UPLOAD_FOLDER)
 
+
+
     return (
             jsonify(
                 {
                     "message": f"Image processed sucessfully",
                     "success": True,
                     "Obstruction_dectected": prediction,
+                    "image_url": f"{BASE_URL}/api/image/{filename}",
                 }
             ),
             200,
