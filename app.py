@@ -1,7 +1,7 @@
 import os
 from flask import Flask,request, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
-from utils import f_resize_raw_image, f_predict, f_clear_folder
+from utils import f_resize_raw_image, f_predict, f_clear_folder, f_remove_files_in_directory
 from flask_cors import CORS
 from tensorflow.keras.preprocessing.image import ImageDataGenerator 
 import scipy
@@ -75,6 +75,9 @@ def upload_file():
     # Picking the image from ./uploads directory, resizing the image to target_size and pushing the resized images to tmp directory.
     
     f_resize_raw_image(UPLOAD_FOLDER, TMP_FOLDER0, target_size)
+
+    # Clearing OUTPUT_FOLDER and Sending latest resized image to OUTPUT_FOLDER.
+    f_remove_files_in_directory(OUTPUT_FOLDER)
     f_resize_raw_image(TMP_FOLDER0, OUTPUT_FOLDER, target_size)
     os.rename(os.path.join(OUTPUT_FOLDER,'0.jpg'), os.path.join(OUTPUT_FOLDER, filename))
 

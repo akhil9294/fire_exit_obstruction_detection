@@ -43,3 +43,16 @@ def f_clear_folder(folder_path):
         if os.path.isfile(file_path):
             os.remove(file_path)
             #print(f"Deleted: {file_path}")
+
+
+def f_remove_files_in_directory(directory):
+    # List all files in the directory
+    files = os.listdir(directory)
+    
+    # Iterate over each file and delete it
+    for file_name in files:
+        file_path = os.path.join(directory, file_name)
+        # Check if it's a file (not a directory) before attempting to delete
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+            print(f"Deleted: {file_path}")
